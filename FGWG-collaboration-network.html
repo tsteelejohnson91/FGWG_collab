@@ -1,0 +1,529 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FGWG Collaboration Network</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>html{color-scheme:light dark}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<style>
+/* Layout: one figure (hub-and-ring network) with a detail panel beside it; tables below carry the same data. */
+:root {
+  --page: #f6f6f3;
+  --surface: #fcfcfb;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --muted: #76746e;
+  --hair: #e1e0d9;
+  --rule: #c3c2b7;
+  --edge: #4b4a47;
+  --proposed: #4a3aa7;
+  --wash: #efeee9;
+  --t1: #2a78d6;
+  --t3: #eb6834;
+  --t6: #1baf7a;
+  --t5: #eda100;
+  --t2: #e87ba4;
+  --t4: #008300;
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7; --muted: #98968f;
+    --hair: #2c2c2a; --rule: #383835; --edge: #c3c2b7; --proposed: #9085e9; --wash: #242422;
+    --t1: #3987e5; --t3: #d95926; --t6: #199e70; --t5: #c98500; --t2: #d55181; --t4: #008300;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7; --muted: #98968f;
+  --hair: #2c2c2a; --rule: #383835; --edge: #c3c2b7; --proposed: #9085e9; --wash: #242422;
+  --t1: #3987e5; --t3: #d95926; --t6: #199e70; --t5: #c98500; --t2: #d55181; --t4: #008300;
+}
+* { box-sizing: border-box; }
+body { background: var(--page); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 56px; display: flex; flex-direction: column; gap: 22px; }
+header { display: flex; flex-direction: column; gap: 6px; }
+.eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+h1 { font-size: 28px; line-height: 1.15; font-weight: 600; margin: 0; text-wrap: balance; letter-spacing: -.01em; }
+.lede { max-width: 68ch; color: var(--ink-2); margin: 0; }
+h2 { font-size: 17px; font-weight: 600; margin: 0; }
+h3 { font-size: 13px; font-weight: 600; margin: 0; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+a { color: inherit; text-decoration-color: var(--rule); text-underline-offset: 2px; }
+a:hover { text-decoration-color: var(--ink); }
+
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; }
+.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.seg label { cursor: pointer; }
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+.seg span { display: block; padding: 7px 14px; font-size: 14px; color: var(--ink-2); border-right: 1px solid var(--hair); }
+.seg label:last-child span { border-right: 0; }
+.seg input:checked + span { background: var(--ink); color: var(--surface); }
+.seg input:focus-visible + span { outline: 2px solid var(--proposed); outline-offset: -2px; }
+.hint { font-size: 13px; color: var(--muted); }
+
+.stage { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 18px; align-items: start; }
+.figure { background: var(--surface); border: 1px solid var(--hair); border-radius: 10px; min-width: 0; }
+.scroll { overflow-x: auto; }
+svg#net { display: block; width: 100%; min-width: 680px; height: auto; font-family: var(--sans); }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; padding: 12px 16px 14px; border-top: 1px solid var(--hair); font-size: 13px; color: var(--ink-2); }
+.legend .item { display: inline-flex; align-items: center; gap: 7px; }
+.dot { width: 11px; height: 11px; border-radius: 50%; flex: none; }
+.key-line { width: 30px; height: 0; border-top: 3px solid var(--edge); flex: none; }
+.key-line.thin { border-top-width: 1.5px; }
+.key-line.dash { border-top: 2px dashed var(--proposed); }
+
+.panel { background: var(--surface); border: 1px solid var(--hair); border-radius: 10px; padding: 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.panel .kicker { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+.panel .name { font-size: 20px; font-weight: 600; line-height: 1.2; }
+.panel .sub { color: var(--ink-2); font-size: 14px; }
+.chip { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; color: var(--ink-2); }
+.stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; }
+.stat b { display: block; font-size: 26px; font-weight: 600; line-height: 1.1; }
+.stat span { font-size: 13px; color: var(--ink-2); }
+.rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.rows li { border-top: 1px solid var(--hair); }
+.rows li:first-child { border-top: 0; }
+.rowbtn { all: unset; box-sizing: border-box; display: flex; width: 100%; gap: 10px; align-items: baseline; padding: 7px 4px; cursor: pointer; border-radius: 4px; font-size: 14px; }
+.rowbtn:hover { background: var(--wash); }
+.rowbtn:focus-visible { outline: 2px solid var(--proposed); outline-offset: 1px; }
+.rowbtn .who { flex: 1; min-width: 0; }
+.rowbtn .n { font-family: var(--mono); font-size: 13px; color: var(--ink-2); white-space: nowrap; }
+.rowbtn .idea { display: block; color: var(--ink-2); font-size: 13px; }
+.papers { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 7px; font-size: 14px; }
+.papers .pm { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.note { font-size: 13px; color: var(--ink-2); }
+.clear { all: unset; cursor: pointer; font-size: 13px; color: var(--ink-2); text-decoration: underline; text-decoration-color: var(--rule); text-underline-offset: 2px; align-self: flex-start; }
+.clear:focus-visible { outline: 2px solid var(--proposed); outline-offset: 2px; }
+
+/* network marks */
+.edge { fill: none; stroke: var(--edge); stroke-opacity: .5; stroke-linecap: round; }
+.edge.prop { stroke: var(--proposed); stroke-opacity: .75; stroke-dasharray: 5 5; stroke-width: 1.6; }
+.hit { fill: none; stroke: transparent; stroke-width: 16; cursor: pointer; }
+.hit:focus { outline: none; }
+.node { cursor: pointer; }
+.node:focus { outline: none; }
+.node circle.mark { stroke: var(--surface); stroke-width: 2; }
+.node circle.ring { fill: none; stroke: var(--ink); stroke-width: 2; opacity: 0; }
+.node:focus-visible circle.ring, .node.sel circle.ring { opacity: 1; }
+.node text { font-size: 15px; fill: var(--ink); font-weight: 500; }
+.node text.halo { stroke: var(--surface); stroke-width: 5; stroke-linejoin: round; fill: var(--surface); }
+.arc { fill: none; stroke-width: 4; stroke-linecap: round; }
+.cap { font-size: 11.5px; letter-spacing: .07em; text-transform: uppercase; fill: var(--muted); font-weight: 500; }
+svg.dim .edge { stroke-opacity: .08; }
+svg.dim .edge.on { stroke-opacity: .95; }
+svg.dim .node { opacity: .28; }
+svg.dim .node.on { opacity: 1; }
+svg[data-mode="existing"] .g-prop, svg[data-mode="proposed"] .g-exist { display: none; }
+
+.tip { position: fixed; z-index: 5; pointer-events: none; background: var(--ink); color: var(--surface); font-size: 13px; padding: 6px 9px; border-radius: 6px; max-width: 260px; line-height: 1.35; }
+.tip b { font-weight: 600; }
+
+section.tables { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+.tablebox { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.tscroll { overflow-x: auto; background: var(--surface); border: 1px solid var(--hair); border-radius: 10px; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 8px 12px; border-top: 1px solid var(--hair); vertical-align: top; }
+thead th { border-top: 0; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 500; white-space: nowrap; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--mono); font-size: 13px; white-space: nowrap; }
+td.pair { white-space: nowrap; font-weight: 500; }
+td.what { color: var(--ink-2); }
+.method { max-width: 78ch; color: var(--ink-2); font-size: 14px; display: flex; flex-direction: column; gap: 8px; }
+.method p { margin: 0; }
+
+@media (max-width: 980px) {
+  .stage { grid-template-columns: minmax(0, 1fr); }
+  section.tables { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 520px) { h1 { font-size: 23px; } td.pair { white-space: normal; } }
+@media (prefers-reduced-motion: no-preference) { .edge, .node { transition: opacity .15s, stroke-opacity .15s; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">CCBB · Functional Genomics Working Group</div>
+    <h1>Who has published with whom</h1>
+    <p class="lede">Each line joins two working group members who share at least one PubMed-indexed paper. Line weight shows how many. Switch to the proposed view to see the new pairings suggested from overlapping research interests.</p>
+  </header>
+
+  <div class="controls">
+    <div class="seg" role="radiogroup" aria-label="Which links to show">
+      <label><input type="radio" name="mode" id="mode-existing" value="existing" checked><span>Published together</span></label>
+      <label><input type="radio" name="mode" id="mode-proposed" value="proposed"><span>Proposed new</span></label>
+      <label><input type="radio" name="mode" id="mode-both" value="both"><span>Both</span></label>
+    </div>
+    <span class="hint">Select a person or a line for the papers behind it.</span>
+  </div>
+
+  <div class="stage">
+    <div class="figure">
+      <div class="scroll">
+        <svg id="net" viewBox="0 0 1040 750" data-mode="existing" role="group" aria-label="Network of co-authorships among the 18 working group members"></svg>
+      </div>
+      <div class="legend" id="legend"></div>
+    </div>
+    <aside class="panel" id="panel" aria-live="polite"></aside>
+  </div>
+
+  <section class="tables">
+    <div class="tablebox">
+      <h2>Pairs with shared papers</h2>
+      <span class="hint">“+1” marks a preprint not yet published; “≈” marks an approximate count.</span>
+      <div class="tscroll"><table id="t-exist"><thead><tr><th>Pair</th><th class="num">Papers</th><th>Shared work</th></tr></thead><tbody></tbody></table></div>
+    </div>
+    <div class="tablebox">
+      <h2>Proposed new pairings</h2>
+      <div class="tscroll"><table id="t-prop"><thead><tr><th>Pair</th><th>Idea</th></tr></thead><tbody></tbody></table></div>
+    </div>
+  </section>
+
+  <div class="method">
+    <h3>How the links were counted</h3>
+    <p>Counts are distinct PubMed-indexed papers across all years, found by author-pair searches on 5 October 2026 and checked by affiliation. Preprints later published, author corrections and one retracted paper are left out. Preprints not yet published are listed separately and marked.</p>
+    <p>A link means shared authorship, not necessarily a joint project. Several single-paper links are large multi-author studies, and most Liu–Wan papers are core-supported collaborations. Shared grants, unpublished work and papers outside PubMed are not captured.</p>
+    <p>Node color and ring position follow each person's primary theme, which is a provisional assignment. Yunlong Liu sits at the center because he links to 11 of the other 17 members.</p>
+  </div>
+</div>
+<div class="tip" id="tip" hidden></div>
+
+<script>
+(function () {
+  var THEMES = {
+    t1: { n: 1, name: "Regulatory genomics and gene regulatory networks", cap: ["Regulatory genomics & gene networks"] },
+    t2: { n: 2, name: "RNA biology and post-transcriptional regulation", cap: ["RNA biology"] },
+    t3: { n: 3, name: "Statistical and population genetics", cap: ["Statistical &", "population", "genetics"] },
+    t4: { n: 4, name: "Single-cell and spatial omics with AI", cap: ["Single-cell &", "spatial AI"] },
+    t5: { n: 5, name: "Proteomics and multi-omics integration", cap: ["Proteomics &", "multi-omics"] },
+    t6: { n: 6, name: "Clinical, imaging and real-world phenotypes", cap: ["Clinical & imaging", "phenotypes"] }
+  };
+  var P = {
+    YL: { name: "Yunlong Liu", theme: "t2", appt: "Medical & Molecular Genetics; CCBB Director", focus: "Functional non-coding variants and splicing in alcohol use disorder; reporter assays; brain single-nucleus multiome." },
+    JW: { name: "Jun Wan", theme: "t1", appt: "Medical & Molecular Genetics; cancer bioinformatics core", focus: "Network-centrality gene prioritization (DiCE); cancer epigenomics; single-cell and spatial collaborations." },
+    YW: { name: "Yijie Wang", theme: "t1", appt: "Computer Science, Luddy School, IU Bloomington", focus: "Regulatory network inference with incomplete priors (NetREX-CF, GRIP); explainable neural networks for drug response." },
+    JL: { name: "Jing Liu", theme: "t1", appt: "Physics (Purdue; IU Indianapolis adjunct)", focus: "Live-cell chromatin dynamics and DNA damage response; single-molecule RNA imaging; deep-learning microscopy." },
+    ZD: { name: "Zhana Duren", theme: "t1", appt: "Medical & Molecular Genetics; CCBB Associate Director for AI", focus: "Gene regulatory networks from single-cell multiome (LINGER, scREG); network-based interpretation of GWAS variants." },
+    TM: { name: "Tes Mersha", theme: "t3", appt: "Medicine (Pulmonary)", focus: "Admixture mapping and ancestry-aware GWAS of asthma and allergic disease; exposome; health disparities." },
+    DL: { name: "Dongbing Lai", theme: "t3", appt: "Medical & Molecular Genetics", focus: "GWAS of substance use disorders; polygenic scores; Parkinson's and Alzheimer's genetics; COGA, Indiana Biobank." },
+    JR: { name: "Jie Ren", theme: "t3", appt: "Biostatistics & Health Data Science", focus: "Robust Bayesian variable selection for gene–environment interaction; network regularization." },
+    KY: { name: "Kai Yuan", theme: "t3", appt: "Medical & Molecular Genetics", focus: "Cross-ancestry fine-mapping (SuSiEx); admixture history; psychiatric and inflammatory bowel disease genetics." },
+    LZ: { name: "Laura Zhou", theme: "t3", appt: "Biostatistics & Health Data Science", focus: "Polygenic scores in admixed and Hispanic/Latino cohorts; neoantigen presentation prediction (PEPPRMINT)." },
+    SW: { name: "Selena Wang", theme: "t6", appt: "Biostatistics & Health Data Science; Stark Neurosciences", focus: "Bayesian latent-space network models for brain connectomes (LatentSNA); imaging genetics; Alzheimer's disease." },
+    KN: { name: "Kwangsik Nho", theme: "t6", appt: "Radiology & Imaging Sciences", focus: "Alzheimer's imaging genetics; plasma proteomics and metabolomics risk scores; ADNI, CLEAR-AD, KBASE." },
+    AM: { name: "Amber Mosley", theme: "t5", appt: "Biochemistry, Molecular Biology & Pharmacology; proteomics core", focus: "Thermal proteome profiling; variant effects on protein stability; RNA Polymerase II termination and the RNA exosome." },
+    GP: { name: "Gang Peng", theme: "t5", appt: "Medical & Molecular Genetics", focus: "Newborn-screening metabolomics with machine learning; DNA methylation clocks; nanopore methylation benchmarking." },
+    LH: { name: "Leng Han", theme: "t2", appt: "Brown Center for Immunotherapy; Biostatistics & Health Data Science", focus: "Immunotherapy adverse events; CAR-T omics; RNA editing, polyadenylation and enhancer RNA atlases." },
+    SJ: { name: "Sarath Janga", theme: "t2", appt: "Biomedical Engineering & Informatics, Luddy School, IU Indianapolis", focus: "Epitranscriptomics from nanopore direct RNA sequencing; RNA-binding protein occupancy; CRISPR design tools." },
+    TJ: { name: "Travis Johnson", theme: "t4", appt: "Biostatistics & Health Data Science", focus: "Transfer learning linking patient outcomes to single cells and spatial spots (DEGAS); multiple myeloma." },
+    JS: { name: "Jing Su", theme: "t4", appt: "Biostatistics & Health Data Science", focus: "EHR and real-world-evidence AI; graph deep learning for single-cell and spatial omics." }
+  };
+  var RING = ["JW", "YW", "JL", "ZD", "TM", "DL", "JR", "KY", "LZ", "SW", "KN", "AM", "GP", "LH", "SJ", "TJ", "JS"];
+  var HUB = "YL";
+  var pm = function (id) { return "https://pubmed.ncbi.nlm.nih.gov/" + id + "/"; };
+  var DEGAS = { t: "DEGAS, Genome Med 2022", id: "35105355" };
+  var AISCEA = { t: "AIscEA, Bioinformatics 2022", id: "36250795" };
+  var CAUD = { t: "Caudate single-nucleus multiome in alcohol use disorder, Nat Commun 2025", id: "41083468" };
+  var CARE26 = { t: "Polygenic score and concussion recovery (CARE), Sports Med 2026", id: "42377762" };
+  var ADRWD = { t: "Real-world neuroinflammation drug responses in Alzheimer's disease, J Alzheimers Dis 2025", id: "40938773" };
+  var NANO = { t: "Nanopore vs EPIC array vs EM-Seq for DNA methylation, Comput Biol Chem 2026", id: "42349238" };
+  var EX = [
+    { a: "YL", b: "JW", n: 23, approx: true, what: "Largely core-supported cancer and developmental genomics",
+      more: "https://pubmed.ncbi.nlm.nih.gov/?term=Liu+Yunlong%5BFAU%5D+AND+Wan+Jun%5BFAU%5D+AND+Indiana%5BAffiliation%5D",
+      note: "24 PubMed records, one of them an author correction. Showing five examples.",
+      papers: [{ t: "ARID1A in cardiogenesis, Genome Biol 2020", id: "32646524" }, { t: "Cell Rep Med 2021", id: "33763657" }, { t: "Cancer Res 2023", id: "37057595" }, { t: "Genes 2023", id: "37895219" }, { t: "Kidney Int 2025", id: "39828039" }] },
+    { a: "YL", b: "DL", n: 19, pre: 1, what: "Alcohol use disorder genetics, polygenic scores, reporter assays, caudate multiome",
+      more: "https://pubmed.ncbi.nlm.nih.gov/?term=Liu+Yunlong%5BFAU%5D+AND+Lai+Dongbing%5BFAU%5D",
+      note: "19 papers from 2015 to 2026 plus one 2026 medRxiv preprint. Showing five examples.",
+      papers: [{ t: "3'-UTR reporter assay of 13,515 variants, Genome Biol 2026", id: "42374457" }, CAUD, { t: "Polygenic scores for alcohol use disorder, JAMA Netw Open 2024", id: "39786404" }, { t: "Splicing and alcohol use disorder risk, Mol Psychiatry 2023", id: "37217680" }, { t: "Nat Commun 2021", id: "34417470" }] },
+    { a: "YL", b: "AM", n: 8, pre: 1, what: "Transcription termination, RNA processing and proteomics",
+      more: "https://pubmed.ncbi.nlm.nih.gov/?term=Liu+Yunlong%5BFAU%5D+AND+%28Mosley+Amber+L%5BFAU%5D+OR+Mosley+AL%5BAU%5D%29",
+      note: "Eight papers from 2015 to 2023 plus a 2026 preprint. One retracted 2021 paper is not counted. Showing six.",
+      papers: [{ t: "Rrp6 and RNA Polymerase II termination, PLoS Genet 2015", id: "25680078" }, { t: "Rtr1 and transcription termination, PLoS Genet 2020", id: "32187185" }, { t: "Multi-omic dorsal striatum in an alcohol-risk model, J Neurochem 2021", id: "33111353" }, { t: "Tumor processing under physioxia, Sci Adv 2022", id: "35020422" }, { t: "Succinyl-CoA synthetase loss in forebrain, Cell Rep 2023", id: "37819759" }, { t: "EXOSC3 variants, bioRxiv 2026 (preprint)", id: "41659589" }] },
+    { a: "YL", b: "KN", n: 6, what: "Alzheimer's disease genetics and methylation benchmarking",
+      papers: [{ t: "Protective variant for hippocampal atrophy, Ann Neurol 2015", id: "25559091" }, { t: "INPP5D, Neurobiol Dis 2021", id: "33631273" }, { t: "PLCG2, Genome Med 2022", id: "35180881" }, { t: "PLCG2 variants and microglia, Immunity 2023", id: "37659412" }, { t: "KBASE blood RNA-seq, Alzheimers Dement 2024", id: "39513963" }, NANO] },
+    { a: "YL", b: "TJ", n: 3, what: "Single-cell methods and myeloma",
+      papers: [DEGAS, AISCEA, { t: "Multiple myeloma single-cell review, Cancers 2025", id: "40002248" }] },
+    { a: "YL", b: "YW", n: 2, what: "Single-cell methods", papers: [DEGAS, AISCEA] },
+    { a: "YL", b: "JR", n: 2, what: "Concussion cohort studies (CARE Consortium)",
+      papers: [{ t: "Blood gene expression after concussion (CARE), Sports Med 2024", id: "37938533" }, CARE26] },
+    { a: "YL", b: "GP", n: 1, pre: 1, what: "Methylation technology benchmarking",
+      note: "The attribution of the preprint to this Gang Peng is likely but not confirmed.",
+      papers: [NANO, { t: "p53 and MTHFD1L in liver cancer, Research Square 2026 (preprint)", id: "42094059" }] },
+    { a: "YL", b: "ZD", n: 1, what: "Brain multiome regulatory networks", papers: [CAUD] },
+    { a: "YL", b: "JS", n: 1, what: "Real-world data in Alzheimer's disease", note: "A 12-author study.", papers: [ADRWD] },
+    { a: "YL", b: "JL", n: 1, what: "Alternative splicing in human islets",
+      papers: [{ t: "Cytokines and alternative splicing in human islets, Diabetes 2021", id: "34697029" }] },
+    { a: "JW", b: "AM", n: 3, what: "Cancer pharmacology with proteomics",
+      papers: [{ t: "Asparagine starvation and histone demethylation, iScience 2023", id: "37034982" }, { t: "APX3330 phase I study, Oncologist 2026", id: "41423797" }, { t: "CDK4/6 and PI3K/mTOR inhibition in osteosarcoma, Neoplasia 2026", id: "41544376" }] },
+    { a: "TJ", b: "YW", n: 3, what: "Single-cell and explainable AI methods",
+      papers: [DEGAS, AISCEA, { t: "ParsVNN, NAR Genom Bioinform 2021", id: "34729476" }] },
+    { a: "JW", b: "SJ", n: 1, what: "Regulatory T-cell biology", note: "Both are middle authors on another lab's study.",
+      papers: [{ t: "FOXP3 exon 2 and Treg stability, Sci Immunol 2022", id: "35749515" }] },
+    { a: "GP", b: "KN", n: 1, what: "Methylation technology benchmarking", papers: [NANO] },
+    { a: "DL", b: "KN", n: 1, what: "Homocysteine genetics",
+      papers: [{ t: "Plasma homocysteine in African Americans and Yoruba Nigerians, J Alzheimers Dis 2016", id: "26519441" }] },
+    { a: "DL", b: "ZD", n: 1, what: "Brain multiome regulatory networks", papers: [CAUD] },
+    { a: "DL", b: "JR", n: 1, what: "Concussion polygenic score", papers: [CARE26] },
+    { a: "DL", b: "JS", n: 1, what: "Real-world data in Alzheimer's disease", note: "A 12-author study.", papers: [ADRWD] },
+    { a: "KN", b: "LH", n: 1, what: "Alzheimer's brain transcriptome",
+      papers: [{ t: "Transcriptional landscape of Alzheimer's disease brains, Sci Adv 2025", id: "39752483" }] },
+    { a: "TJ", b: "AM", n: 1, what: "Beta-cell pharmacology", note: "A 19-author study.",
+      papers: [{ t: "VDAC1 and insulin hypersecretion in beta cells, Cell Rep 2025", id: "40512624" }] },
+    { a: "AM", b: "SW", n: 1, what: "Microglia in Alzheimer's disease models",
+      papers: [{ t: "SPI1 deletion in microglia and amyloid pathology, Neuron 2026", id: "41928507" }] },
+    { a: "YW", b: "JL", n: 0, pre: 1, what: "Antigen presentation from single-cell data",
+      note: "Preprint only. It lists a Purdue-affiliated Jing Liu with no department, so the match is likely but not confirmed.",
+      papers: [{ t: "PSAA physics-informed neural network, Research Square 2025 (preprint)", id: "39877095" }] }
+  ];
+  var PR = [
+    { a: "TM", b: "KY", idea: "Cross-ancestry fine-mapping (SuSiEx) of asthma and allergy GWAS loci." },
+    { a: "TM", b: "LZ", idea: "Polygenic scores for asthma in admixed populations, using local ancestry." },
+    { a: "KY", b: "LZ", idea: "Fine-mapping-informed polygenic scores for admixed and Hispanic/Latino cohorts." },
+    { a: "KY", b: "ZD", idea: "Interpret fine-mapped psychiatric variants through LINGER regulatory networks." },
+    { a: "YL", b: "KY", idea: "Fine-mapped psychiatric and alcohol-use variants tested by reporter assay and in the caudate multiome." },
+    { a: "YL", b: "SJ", idea: "Nanopore direct RNA and RNA-binding protein occupancy applied to splicing and 3'-UTR risk variants." },
+    { a: "SJ", b: "LH", idea: "Long-read validation of RNA editing and polyadenylation atlases." },
+    { a: "SJ", b: "GP", idea: "Shared nanopore platform covering RNA modifications and DNA methylation." },
+    { a: "AM", b: "DL", idea: "Protein-stability profiling of missense variants from Parkinson's and substance-use genetics." },
+    { a: "AM", b: "KY", idea: "Protein-stability profiling of fine-mapped coding variants." },
+    { a: "AM", b: "KN", idea: "Mass-spectrometry follow-up of plasma proteomic risk signatures in Alzheimer's disease." },
+    { a: "KN", b: "SW", idea: "Connectome models linked to imaging genetics and plasma proteomics in ADNI." },
+    { a: "TJ", b: "JS", idea: "DEGAS combined with spatial graph models, anchored to EHR outcomes." },
+    { a: "TJ", b: "ZD", idea: "Regulatory drivers of high-risk myeloma cells from the 325,000-cell RNA+ATAC dataset." },
+    { a: "ZD", b: "YW", idea: "Joint benchmark or hybrid of LINGER and NetREX-CF/GRIP." },
+    { a: "LH", b: "TJ", idea: "CAR-T and immunotherapy response and toxicity in myeloma, including sex differences." },
+    { a: "LZ", b: "AM", idea: "Immunopeptidomics data to train and validate neoantigen presentation prediction." },
+    { a: "LZ", b: "LH", idea: "Neoantigen prediction applied to immunotherapy response and adverse-event cohorts." },
+    { a: "JR", b: "TM", idea: "Gene–environment interaction models for asthma exposure and ancestry data." },
+    { a: "SW", b: "DL", idea: "GWAS of brain-network phenotypes in cohorts that overlap substance-use genetics." },
+    { a: "SW", b: "KY", idea: "Cross-ancestry fine-mapping of loci for brain-network phenotypes." },
+    { a: "JL", b: "ZD", idea: "Live-cell imaging and single-molecule RNA FISH to test predicted regulatory interactions." },
+    { a: "JL", b: "JW", idea: "Chromatin-dynamics imaging for cancer epigenomics targets." },
+    { a: "JS", b: "TM", idea: "EHR trajectory phenotypes in All of Us as outcomes for ancestry-aware GWAS." }
+  ];
+
+  var NS = "http://www.w3.org/2000/svg";
+  var svg = document.getElementById("net");
+  var panel = document.getElementById("panel");
+  var tip = document.getElementById("tip");
+  var CX = 504, CY = 378, R = 252;
+  function el(tag, attrs, parent) { var e = document.createElementNS(NS, tag); for (var k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+  function h(tag, cls, text, parent) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; if (parent) parent.appendChild(e); return e; }
+  function total(e) { return (e.n || 0) + (e.pre || 0); }
+  function countLabel(e) {
+    var s = e.n ? (e.approx ? "about " : "") + e.n + (e.n === 1 ? " paper" : " papers") : "";
+    if (e.pre) s += (s ? " + " : "") + e.pre + " preprint";
+    return s;
+  }
+  function shortCount(e) { return (e.approx ? "≈" : "") + (e.n || 0) + (e.pre ? "+" + e.pre : ""); }
+
+  // positions: ring blocks separated by a gap, hub in the center
+  var pos = {}; pos[HUB] = { x: CX, y: CY, ang: null };
+  var GAP = 0.7, blocks = [], prev = null;
+  RING.forEach(function (id) { if (P[id].theme !== prev) { blocks.push({ theme: P[id].theme, ids: [] }); prev = P[id].theme; } blocks[blocks.length - 1].ids.push(id); });
+  var units = RING.length + blocks.length * GAP, step = 2 * Math.PI / units, cur = -Math.PI / 2 - (blocks[0].ids.length - 1) * step / 2;
+  blocks.forEach(function (b) {
+    b.a0 = cur;
+    b.ids.forEach(function (id, i) { var a = cur + i * step; pos[id] = { x: CX + R * Math.cos(a), y: CY + R * Math.sin(a), ang: a }; });
+    b.a1 = cur + (b.ids.length - 1) * step;
+    cur = b.a1 + step * (1 + GAP);
+  });
+
+  var gArc = el("g", {}, svg), gProp = el("g", { "class": "g-prop" }, svg), gExist = el("g", { "class": "g-exist" }, svg), gNode = el("g", {}, svg);
+
+  // theme arcs and captions
+  blocks.forEach(function (b) {
+    var ra = R + 20, pad = 0.09, a0 = b.a0 - pad, a1 = b.a1 + pad;
+    el("path", { "class": "arc", stroke: "var(--" + b.theme + ")", d: "M" + (CX + ra * Math.cos(a0)) + " " + (CY + ra * Math.sin(a0)) + " A" + ra + " " + ra + " 0 0 1 " + (CX + ra * Math.cos(a1)) + " " + (CY + ra * Math.sin(a1)) }, gArc);
+    b.mid = (b.a0 + b.a1) / 2;
+  });
+
+  function pathFor(e) {
+    var p = pos[e.a], q = pos[e.b];
+    if (e.a === HUB || e.b === HUB) return "M" + p.x + " " + p.y + " L" + q.x + " " + q.y;
+    var mx = (p.x + q.x) / 2, my = (p.y + q.y) / 2, f = 0.62;
+    return "M" + p.x + " " + p.y + " Q" + (CX + (mx - CX) * f) + " " + (CY + (my - CY) * f) + " " + q.x + " " + q.y;
+  }
+  function width(e) { return 1.3 + 1.6 * Math.sqrt(Math.max(total(e), 1) - 1); }
+
+  var edgeEls = [];
+  function drawEdge(e, kind, parent) {
+    var d = pathFor(e), g = el("g", {}, parent);
+    var vis = el("path", { "class": "edge" + (kind === "prop" ? " prop" : ""), d: d }, g);
+    if (kind === "exist") vis.setAttribute("stroke-width", width(e).toFixed(2));
+    var label = P[e.a].name + " and " + P[e.b].name + ": " + (kind === "exist" ? countLabel(e) : "proposed pairing");
+    var hit = el("path", { "class": "hit", d: d, tabindex: "0", role: "button", "aria-label": label }, g);
+    var rec = { e: e, kind: kind, vis: vis };
+    edgeEls.push(rec);
+    hit.addEventListener("pointermove", function (ev) { showTip(ev, P[e.a].name + " + " + P[e.b].name, kind === "exist" ? countLabel(e) : "Proposed: " + e.idea); hover({ edge: rec }); });
+    hit.addEventListener("pointerleave", function () { hideTip(); hover(null); });
+    hit.addEventListener("click", function (ev) { ev.stopPropagation(); select({ edge: rec }); });
+    hit.addEventListener("keydown", function (ev) { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); select({ edge: rec }); } });
+    hit.addEventListener("focus", function () { hover({ edge: rec }); });
+    hit.addEventListener("blur", function () { hover(null); });
+  }
+  PR.forEach(function (e) { drawEdge(e, "prop", gProp); });
+  EX.slice().sort(function (x, y) { return total(y) - total(x); }).forEach(function (e) { drawEdge(e, "exist", gExist); });
+
+  // nodes
+  var nodeEls = {};
+  Object.keys(P).forEach(function (id) {
+    var p = pos[id], isHub = id === HUB, r = isHub ? 13 : 9.5;
+    var g = el("g", { "class": "node", tabindex: "0", role: "button", "aria-label": P[id].name + ", " + THEMES[P[id].theme].name }, gNode);
+    el("circle", { cx: p.x, cy: p.y, r: 24, fill: "transparent" }, g);
+    el("circle", { "class": "ring", cx: p.x, cy: p.y, r: r + 4.5 }, g);
+    el("circle", { "class": "mark", cx: p.x, cy: p.y, r: r, fill: "var(--" + P[id].theme + ")" }, g);
+    var tx, ty, anchor = "middle", base = "middle";
+    if (isHub) { tx = p.x; ty = p.y + 31; }
+    else {
+      var c = Math.cos(p.ang), s = Math.sin(p.ang), rl = R + 38;
+      tx = CX + rl * c; ty = CY + rl * s;
+      if (c > 0.3) anchor = "start"; else if (c < -0.3) anchor = "end";
+      else { ty += s < 0 ? -5 : 7; }
+    }
+    if (isHub) el("text", { "class": "halo", x: tx, y: ty, "text-anchor": anchor, "dominant-baseline": base }, g).textContent = P[id].name;
+    el("text", { x: tx, y: ty, "text-anchor": anchor, "dominant-baseline": base }, g).textContent = P[id].name;
+    nodeEls[id] = g;
+    g.addEventListener("pointermove", function (ev) { var k = neighbors(id); showTip(ev, P[id].name, k.ex.length + " published link" + (k.ex.length === 1 ? "" : "s") + " · " + k.pr.length + " proposed"); hover({ node: id }); });
+    g.addEventListener("pointerleave", function () { hideTip(); hover(null); });
+    g.addEventListener("click", function (ev) { ev.stopPropagation(); select({ node: id }); });
+    g.addEventListener("keydown", function (ev) { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); select({ node: id }); } });
+    g.addEventListener("focus", function () { hover({ node: id }); });
+    g.addEventListener("blur", function () { hover(null); });
+  });
+
+  // theme captions, placed outside the name labels
+  blocks.forEach(function (b) {
+    var c = Math.cos(b.mid), s = Math.sin(b.mid), lines = THEMES[b.theme].cap;
+    var rc = R + 64 + 98 * Math.pow(Math.abs(c), 1.3), x = CX + rc * c, y = CY + rc * s;
+    var anchor = c > 0.3 ? "start" : c < -0.3 ? "end" : "middle";
+    if (anchor === "middle") y += s < 0 ? -(lines.length - 1) * 14 : 0;
+    lines.forEach(function (ln, i) { el("text", { "class": "cap", x: x, y: y + (i - (anchor === "middle" ? 0 : (lines.length - 1) / 2)) * 14, "text-anchor": anchor, "dominant-baseline": "middle" }, gArc).textContent = ln; });
+  });
+
+  function neighbors(id) {
+    var ex = EX.filter(function (e) { return e.a === id || e.b === id; }).sort(function (x, y) { return total(y) - total(x); });
+    var pr = PR.filter(function (e) { return e.a === id || e.b === id; });
+    return { ex: ex, pr: pr };
+  }
+  function other(e, id) { return e.a === id ? e.b : e.a; }
+  function mode() { return svg.getAttribute("data-mode"); }
+  function visible(kind) { var m = mode(); return m === "both" || (m === "existing" ? kind === "exist" : kind === "prop"); }
+
+  var selected = null;
+  function paint(target) {
+    var t = target || selected;
+    Object.keys(nodeEls).forEach(function (id) { nodeEls[id].classList.remove("on"); nodeEls[id].classList.toggle("sel", !!(selected && selected.node === id)); });
+    edgeEls.forEach(function (r) { r.vis.classList.remove("on"); });
+    if (!t) { svg.classList.remove("dim"); return; }
+    svg.classList.add("dim");
+    if (t.node) {
+      nodeEls[t.node].classList.add("on");
+      edgeEls.forEach(function (r) { if ((r.e.a === t.node || r.e.b === t.node) && visible(r.kind)) { r.vis.classList.add("on"); nodeEls[other(r.e, t.node)].classList.add("on"); } });
+    } else {
+      t.edge.vis.classList.add("on"); nodeEls[t.edge.e.a].classList.add("on"); nodeEls[t.edge.e.b].classList.add("on");
+    }
+  }
+  function hover(t) { paint(t); }
+  function select(t) { selected = t; paint(); render(); }
+  svg.addEventListener("click", function () { select(null); });
+
+  function showTip(ev, title, body) {
+    tip.textContent = ""; h("b", null, title, tip); if (body) { tip.appendChild(document.createElement("br")); tip.appendChild(document.createTextNode(body)); }
+    tip.hidden = false;
+    var w = tip.offsetWidth, x = Math.min(ev.clientX + 14, window.innerWidth - w - 8);
+    tip.style.left = Math.max(8, x) + "px"; tip.style.top = (ev.clientY + 16) + "px";
+  }
+  function hideTip() { tip.hidden = true; }
+
+  function themeChip(id, parent) { var c = h("span", "chip", null, parent); var d = h("span", "dot", null, c); d.style.background = "var(--" + P[id].theme + ")"; h("span", null, "Theme " + THEMES[P[id].theme].n + ": " + THEMES[P[id].theme].name, c); }
+  function findRec(e, kind) { for (var i = 0; i < edgeEls.length; i++) if (edgeEls[i].e === e && edgeEls[i].kind === kind) return edgeEls[i]; }
+  function clearBtn() { var b = h("button", "clear", "Back to overview", panel); b.type = "button"; b.addEventListener("click", function () { select(null); }); }
+
+  function render() {
+    panel.textContent = "";
+    if (!selected) {
+      h("div", "kicker", "Overview", panel);
+      var st = h("div", "stats", null, panel);
+      [["23", "pairs share at least one paper or preprint"], ["11 of 17", "members have published with Yunlong Liu"], ["3", "members have no within-group papers yet"], ["24", "proposed new pairings"]].forEach(function (s) { var d = h("div", "stat", null, st); h("b", null, s[0], d); h("span", null, s[1], d); });
+      h("p", "note", "Tes Mersha, Kai Yuan and Laura Zhou have no shared papers with the group. Sarath Janga, Leng Han and Selena Wang have one link each. The recent hires and the RNA and ancestry groups are where new pairings add most.", panel);
+      h("h3", null, "Most connected", panel);
+      var ul = h("ul", "rows", null, panel);
+      Object.keys(P).map(function (id) { return { id: id, k: neighbors(id).ex.length }; }).sort(function (x, y) { return y.k - x.k; }).slice(0, 7).forEach(function (o) {
+        var li = h("li", null, null, ul), b = h("button", "rowbtn", null, li); b.type = "button";
+        h("span", "who", P[o.id].name, b); h("span", "n", o.k + " links", b);
+        b.addEventListener("click", function () { select({ node: o.id }); });
+      });
+      return;
+    }
+    if (selected.node) {
+      var id = selected.node, k = neighbors(id);
+      h("div", "kicker", "Member", panel);
+      h("div", "name", P[id].name, panel);
+      h("div", "sub", P[id].appt, panel);
+      themeChip(id, panel);
+      h("p", "note", P[id].focus, panel);
+      h("h3", null, "Published with (" + k.ex.length + ")", panel);
+      if (!k.ex.length) h("p", "note", "No shared papers with other working group members found in PubMed.", panel);
+      else { var u1 = h("ul", "rows", null, panel); k.ex.forEach(function (e) {
+        var li = h("li", null, null, u1), b = h("button", "rowbtn", null, li); b.type = "button";
+        h("span", "who", P[other(e, id)].name, b); h("span", "n", shortCount(e), b);
+        b.addEventListener("click", function () { select({ edge: findRec(e, "exist") }); });
+      }); }
+      h("h3", null, "Proposed new pairings (" + k.pr.length + ")", panel);
+      if (!k.pr.length) h("p", "note", "None proposed yet.", panel);
+      else { var u2 = h("ul", "rows", null, panel); k.pr.forEach(function (e) {
+        var li = h("li", null, null, u2), b = h("button", "rowbtn", null, li); b.type = "button";
+        var w = h("span", "who", P[other(e, id)].name, b); h("span", "idea", e.idea, w);
+        b.addEventListener("click", function () { select({ edge: findRec(e, "prop") }); });
+      }); }
+      clearBtn();
+      return;
+    }
+    var rec = selected.edge, e = rec.e;
+    h("div", "kicker", rec.kind === "exist" ? "Published together" : "Proposed new pairing", panel);
+    h("div", "name", P[e.a].name + " + " + P[e.b].name, panel);
+    if (rec.kind === "exist") {
+      h("div", "sub", countLabel(e) + " · " + e.what, panel);
+      var pl = h("ul", "papers", null, panel);
+      e.papers.forEach(function (p) { var li = h("li", null, null, pl), a = h("a", null, p.t, li); a.href = pm(p.id); a.target = "_blank"; a.rel = "noopener"; li.appendChild(document.createTextNode(" ")); h("span", "pm", "PMID " + p.id, li); });
+      if (e.note) h("p", "note", e.note, panel);
+      if (e.more) { var m = h("a", "note", "All shared records on PubMed", panel); m.href = e.more; m.target = "_blank"; m.rel = "noopener"; }
+    } else {
+      h("p", "sub", e.idea, panel);
+      h("p", "note", "No shared PubMed papers were found for this pair.", panel);
+    }
+    themeChip(e.a, panel); themeChip(e.b, panel);
+    clearBtn();
+  }
+
+  // legend
+  var lg = document.getElementById("legend");
+  ["t1", "t2", "t3", "t4", "t5", "t6"].forEach(function (t) { var i = h("span", "item", null, lg), d = h("span", "dot", null, i); d.style.background = "var(--" + t + ")"; h("span", null, THEMES[t].n + " " + THEMES[t].name, i); });
+  [["key-line thin", "1 paper"], ["key-line", "more papers, heavier line"], ["key-line dash", "proposed pairing"]].forEach(function (k) { var i = h("span", "item", null, lg); h("span", k[0], null, i); h("span", null, k[1], i); });
+
+  // tables
+  var tb = document.querySelector("#t-exist tbody");
+  EX.slice().sort(function (x, y) { return total(y) - total(x); }).forEach(function (e) {
+    var tr = document.createElement("tr");
+    h("td", "pair", P[e.a].name + " + " + P[e.b].name, tr); h("td", "num", shortCount(e), tr); h("td", "what", e.what, tr); tb.appendChild(tr);
+  });
+  var tp = document.querySelector("#t-prop tbody");
+  PR.forEach(function (e) { var tr = document.createElement("tr"); h("td", "pair", P[e.a].name + " + " + P[e.b].name, tr); h("td", "what", e.idea, tr); tp.appendChild(tr); });
+
+  // mode switch
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="mode"]'), function (inp) {
+    inp.addEventListener("change", function () {
+      if (!inp.checked) return;
+      svg.setAttribute("data-mode", inp.value);
+      if (selected && selected.edge && !visible(selected.edge.kind)) selected = null;
+      paint(); render();
+    });
+  });
+  render();
+})();
+</script>
+</body>
+</html>
