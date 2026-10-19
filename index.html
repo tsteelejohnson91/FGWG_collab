@@ -165,7 +165,7 @@ td .dot { display: inline-block; vertical-align: middle; margin-right: 6px; }
   <header>
     <div class="eyebrow">Center for Computational Biology and Bioinformatics · 45 investigators</div>
     <h1>Who has published with whom</h1>
-    <p class="lede">Each line joins two CCBB investigators who share at least one PubMed-indexed paper; heavier lines mean more papers. Members sit on the ring grouped by their primary research theme. Switch to the proposed view to see new pairings suggested from overlapping research interests.</p>
+    <p class="lede">Each line joins two CCBB investigators who share at least one PubMed-indexed paper; heavier lines mean more papers. Yunlong Liu and Kun Huang, the two hubs, sit at the center; everyone else is on the ring, grouped by primary research theme. Switch to the proposed view to see new pairings suggested from overlapping research interests.</p>
   </header>
 
   <div class="controls">
@@ -208,7 +208,7 @@ td .dot { display: inline-block; vertical-align: middle; margin-right: 6px; }
   <div class="method">
     <h3>How the links were counted</h3>
     <p>Counts are distinct PubMed-indexed papers across all years, found by author-pair searches (5 and 16 October 2026) and checked by affiliation to exclude namesakes. Preprints later published, author corrections and retracted papers are left out; preprints and abstracts not yet published are shown separately and marked. Conference-only venues and arXiv are not covered, so links for the computer-science members are lower bounds.</p>
-    <p>A link means shared authorship, not necessarily a joint project. Several single-paper links are large multi-author or consortium papers; the "hide single-paper links" option removes them. Theme assignments are provisional and based on publication records. Yunlong Liu sits at the center because he links to 26 of the other 44 members.</p>
+    <p>A link means shared authorship, not necessarily a joint project. Several single-paper links are large multi-author or consortium papers; the "hide single-paper links" option removes them. Theme assignments are provisional and based on publication records. Yunlong Liu (26 links) and Kun Huang (10 links, 126 shared papers) sit at the center as the hubs of the center's two largest communities; the line between them is their own 7 shared papers.</p>
     <p>Abbreviations: MMGE, Department of Medical and Molecular Genetics; BHDS, Department of Biostatistics and Health Data Science; IUSCCC, IU Simon Comprehensive Cancer Center; Luddy, Luddy School of Informatics, Computing and Engineering.</p>
   </div>
 </div>
@@ -274,8 +274,8 @@ td .dot { display: inline-block; vertical-align: middle; margin-right: 6px; }
     LY: { name: "Lei Yang", theme: "t9", also: [], appt: "Pediatrics (Wells Center)", focus: "Cardiac development and congenital heart disease from human pluripotent stem cells; cardiac lncRNAs; ARID1A and PRC2 in cardiogenesis; SARS-CoV-2 effects on cardiomyocytes." },
     JiZ: { name: "Ji Zhang", theme: "t9", also: [], appt: "Pediatrics (Wells Center)", focus: "Cancer metabolism: asparagine and amino acid starvation; MYC translation; asparagine synthetase targeting in leukemia; hematopoietic stem cell metabolism." }
   };
-  var HUB = "YL";
-  var RING = ["SQ", "YZ", "JS", "KH", "JZ", "TJ", "JXW", "YW", "XH", "ZD", "JL", "JW", "JV", "AM", "IW", "AD", "GP", "KaY", "LY", "MA", "CD", "EC", "JiZ", "SJ", "LH", "KN", "JY", "LuZ", "SW", "YiZ", "SB", "HD", "YH", "SG", "XE", "JB", "TK", "PZ", "TS", "LZ", "TM", "DL", "KY", "JR"];
+  var HUBS = { YL: { dx: -98, dy: 0 }, KH: { dx: 98, dy: 0 } };
+  var RING = ["SQ", "YZ", "JS", "JZ", "TJ", "JXW", "YW", "XH", "ZD", "JL", "JW", "JV", "AM", "IW", "AD", "GP", "KaY", "LY", "MA", "CD", "EC", "JiZ", "SJ", "LH", "KN", "JY", "LuZ", "SW", "YiZ", "SB", "HD", "YH", "SG", "XE", "JB", "TK", "PZ", "TS", "LZ", "TM", "DL", "KY", "JR"];
   var pm = function (id) { return "https://pubmed.ncbi.nlm.nih.gov/" + id + "/"; };
   var TITLES = {
     "35105355": "DEGAS, Genome Med 2022", "36250795": "AIscEA, Bioinformatics 2022", "34729476": "ParsVNN, NAR Genom Bioinform 2021",
@@ -501,7 +501,7 @@ td .dot { display: inline-block; vertical-align: middle; margin-right: 6px; }
   function isSingle(e) { return (e.n || 0) <= 1; }
 
   // ring positions grouped into theme blocks with gaps
-  var pos = {}; pos[HUB] = { x: CX, y: CY, ang: null };
+  var pos = {}; Object.keys(HUBS).forEach(function (hid) { pos[hid] = { x: CX + HUBS[hid].dx, y: CY + HUBS[hid].dy, ang: null }; });
   var GAP = 1.2, blocks = [], prev = null;
   RING.forEach(function (id) { if (P[id].theme !== prev) { blocks.push({ theme: P[id].theme, ids: [] }); prev = P[id].theme; } blocks[blocks.length - 1].ids.push(id); });
   var units = RING.length + blocks.length * GAP, step = 2 * Math.PI / units, cur = -Math.PI / 2 + step * GAP / 2;
@@ -516,7 +516,17 @@ td .dot { display: inline-block; vertical-align: middle; margin-right: 6px; }
 
   function pathFor(e) {
     var p = pos[e.a], q = pos[e.b];
-    if (e.a === HUB || e.b === HUB) return "M" + p.x + " " + p.y + " L" + q.x + " " + q.y;
+    var ha = !!HUBS[e.a], hb = !!HUBS[e.b];
+    if (ha && hb) return "M" + p.x + " " + p.y + " L" + q.x + " " + q.y;
+    if (ha || hb) {
+      var hub = ha ? e.a : e.b, otherHub = hub === "YL" ? "KH" : "YL", hp = pos[hub], np = ha ? q : p, o = pos[otherHub];
+      var dx = np.x - hp.x, dy = np.y - hp.y, L = Math.sqrt(dx * dx + dy * dy), nx = -dy / L, ny = dx / L;
+      var side = ((o.x - hp.x) * nx + (o.y - hp.y) * ny) > 0 ? -1 : 1;
+      var t = ((o.x - hp.x) * dx + (o.y - hp.y) * dy) / L, dist = Math.abs((o.x - hp.x) * nx + (o.y - hp.y) * ny);
+      var k = (t > 0 && t < L && dist < 90) ? 0.18 * L : 0.05 * L;
+      var cx2 = (hp.x + np.x) / 2 + nx * side * k, cy2 = (hp.y + np.y) / 2 + ny * side * k;
+      return "M" + p.x + " " + p.y + " Q" + cx2 + " " + cy2 + " " + q.x + " " + q.y;
+    }
     var ia = RING.indexOf(e.a), ib = RING.indexOf(e.b), dd = Math.abs(ia - ib); dd = Math.min(dd, RING.length - dd);
     var f = 0.42 + 0.46 * (1 - dd / (RING.length / 2));
     var mx = (p.x + q.x) / 2, my = (p.y + q.y) / 2;
@@ -570,7 +580,7 @@ td .dot { display: inline-block; vertical-align: middle; margin-right: 6px; }
   // nodes with radial labels
   var nodeEls = {};
   Object.keys(P).forEach(function (id) {
-    var p = pos[id], isHub = id === HUB, r = isHub ? 12 : 7.5;
+    var p = pos[id], isHub = !!HUBS[id], r = isHub ? 12 : 7.5;
     var g = el("g", { "class": "node", tabindex: "0", role: "button", "aria-label": P[id].name + ", theme " + THEMES[P[id].theme].n }, gNode);
     el("circle", { cx: p.x, cy: p.y, r: 20, fill: "transparent" }, g);
     el("circle", { "class": "ring", cx: p.x, cy: p.y, r: r + 4 }, g);
@@ -652,7 +662,7 @@ td .dot { display: inline-block; vertical-align: middle; margin-right: 6px; }
     if (!selected) {
       h("div", "kicker", "Overview", panel);
       var st = h("div", "stats", null, panel);
-      [[linkedPairs + " of 990", "pairs share at least one paper or preprint (" + Math.round(linkedPairs / 9.9) + "%)"], [String(pairsMulti), "pairs share two or more papers"], ["26 of 44", "members have published with Yunlong Liu"], ["3", "members have no within-center papers: Mersha, Yuan and Zhou"]].forEach(function (s) { var d = h("div", "stat", null, st); h("b", null, s[0], d); h("span", null, s[1], d); });
+      [[linkedPairs + " of 990", "pairs share at least one paper or preprint (" + Math.round(linkedPairs / 9.9) + "%)"], [String(pairsMulti), "pairs share two or more papers"], ["26 · 10", "members linked to Yunlong Liu and to Kun Huang, the two hubs"], ["3", "members have no within-center papers: Mersha, Yuan and Zhou"]].forEach(function (s) { var d = h("div", "stat", null, st); h("b", null, s[0], d); h("span", null, s[1], d); });
       h("p", "note", "Five communities show up: a genetics hub around Yunlong Liu; an AI and Alzheimer's multi-omics hub around Kun Huang; the real-world-data group around Jiang Bian, which is the densest but almost unlinked to the rest; imaging genetics around Kwangsik Nho; and Jun Wan's wet-lab partners. Pengyue Zhang, Yong Zang and Yi Zhao are the main bridges between them.", panel);
       h("h3", null, "Most connected", panel);
       rowList(Object.keys(P).map(function (id) { return { id: id, k: neighbors(id).ex.length }; }).sort(function (x, y) { return y.k - x.k; }).slice(0, 8).map(function (o) { return { who: P[o.id].name, n: o.k + " links", go: function () { select({ node: o.id }); } }; }), panel);
